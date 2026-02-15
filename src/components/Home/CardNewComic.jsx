@@ -219,14 +219,21 @@ const CardNewComic = ({ currentPage, setCurrentPage }) => {
                             style={{ animationDelay: `${index * 50}ms` }}
                         >
                             <div className="relative aspect-[2/3] overflow-hidden">
-                                <img
-                                    src={comic.image}
-                                    alt={comic.title}
-                                    width="300"
-                                    height="450"
-                                    loading="lazy"
-                                    decoding="async"
-                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                <div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl">
+
+  <img
+    src={comic.image}
+    alt={comic.title}
+    loading="lazy"
+    decoding="async"
+    className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-110"
+    onError={(e) => {
+      e.currentTarget.src = "https://via.placeholder.com/300x450?text=Comic+Cover";
+    }}
+  />
+
+</div>
+
                                     onError={(e) => {
                                         e.target.src = 'https://via.placeholder.com/300x450?text=Comic+Cover'
                                     }}
@@ -299,3 +306,4 @@ const CardNewComic = ({ currentPage, setCurrentPage }) => {
 }
 
 export default CardNewComic
+                
