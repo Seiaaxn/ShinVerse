@@ -1,173 +1,120 @@
-import React, { useState, useEffect } from 'react'
-import axios from 'axios'
-import { useNavigate } from 'react-router-dom'
-import SkeletonLoader from '../SkeletonLoader'
+import React from 'react'
+import { Link } from 'react-router-dom'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faBookOpen, faCompass } from '@fortawesome/free-solid-svg-icons'
+import SearchComic from '../components/Home/SearchComic'
+import CardTerbaruComic from '../components/Home/CardTerbaruComic'
+import CardTrendingComic from '../components/Home/CardTrendingComic'
+import CardUnlimitedComic from '../components/Home/CardUnlimitedComic'
+import SEO from '../components/SEO'
 
-const CardUnlimitedComic = () => {
-    const [comics, setComics] = useState([])
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState(null)
-
-    const navigate = useNavigate()
-
-    const fetchComics = async () => {
-        try {
-            const response = await axios.get('https://www.sankavollerei.com/comic/unlimited')
-            const rawComics = response.data.comics || []
-            const filteredComics = rawComics.filter(item => 
-                !item.title.toLowerCase().includes('apk') && 
-                !item.chapter.toLowerCase().includes('download')
-            )
-            
-            const processedComics = filteredComics.map(comic => {
-                const slug = comic.title
-                    .toLowerCase()
-                    .replace(/[^a-z0-9]+/g, '-')
-                    .replace(/^-+|-+$/g, '');
-
-                let cleanLink = comic.link;
-                try {
-                    const urlObj = new URL(comic.link);
-                    cleanLink = urlObj.pathname; 
-                    cleanLink = cleanLink
-                        .replace('/manga/', '')
-                        .replace('/plus/', '')
-                        .replace(/^\/+|\/+$/g, ''); 
-                } catch (e) {
-                    console.log("Error parsing URL", comic.link);
-                }
-
-                const imageUrl = comic.image && !comic.image.includes('lazy.jpg')
-                    ? comic.image
-                    : 'https://via.placeholder.com/300x450?text=Cover+Unlimited';
-                
-                return {
-                    ...comic,
-                    image: imageUrl,
-                    processedLink: cleanLink,
-                    slug: slug,
-                    source: 'Unlimited', 
-                    popularity: 'N/A'   
-                }
-            })
-
-            setComics(processedComics)
-            setLoading(false)
-
-        } catch (err) {
-            setError(err)
-            setLoading(false)
-            console.error("Error fetching unlimited comics:", err)
-        }
-    }
-
-    useEffect(() => {
-        fetchComics()
-    }, [])
-
-    const handleComicDetail = (comic) => {
-        navigate(`/detail-comic/${comic.slug}`, { 
-            state: { 
-                comic: {
-                    title: comic.title,
-                    image: comic.image,
-                    chapter: comic.chapter,
-                    source: comic.source, 
-                    popularity: comic.popularity
-                },
-                processedLink: comic.processedLink 
-            } 
-        })
-    }
-
-    if (loading) {
-        return (
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                <div className="flex items-center gap-3 mb-8">
-                    <div className="flex items-center gap-2">
-                        <div className="w-1 h-8 bg-gradient-to-b from-pink-500 to-rose-500 rounded-full"></div>
-                        <h2 className="text-3xl font-bold bg-gradient-to-r from-pink-500 to-rose-500 bg-clip-text text-transparent">
-                            Unlimited Collection
-                        </h2>
-                    </div>
-                    <div className="flex-1 h-px bg-gradient-to-r from-gray-300 dark:from-gray-700 to-transparent"></div>
-                </div>
-                <SkeletonLoader count={12} type="card" />
-            </div>
-        )
-    }
-
-    if (error) {
-        return (
-            <div className="flex justify-center items-center min-h-[400px] p-4">
-                <div className="bg-red-500/10 border border-red-500/50 rounded-2xl p-8 text-center backdrop-blur-sm max-w-md">
-                    <svg className="w-16 h-16 text-red-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <h2 className="text-xl font-bold text-red-400 mb-2">Terjadi Kesalahan</h2>
-                    <p className="text-red-300">{error.message}</p>
-                </div>
-            </div>
-        )
-    }
-
-    return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div className="flex items-center gap-3 mb-8">
-                <div className="flex items-center gap-2">
-                    <div className="w-1 h-8 bg-gradient-to-b from-pink-500 to-rose-500 rounded-full"></div>
-                    <h2 className="text-3xl font-bold bg-gradient-to-r from-pink-500 to-rose-500 bg-clip-text text-transparent">
-                        Unlimited Collection
-                    </h2>
-                </div>
-                <div className="flex-1 h-px bg-gradient-to-r from-gray-300 dark:from-gray-700 to-transparent"></div>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
-                {comics.map((comic, index) => (
-                    <div
-                        key={`${comic.slug}-${index}`}
-                        className="group relative bg-white/80 dark:bg-gradient-to-b dark:from-gray-800 dark:to-gray-900 backdrop-blur-sm rounded-xl overflow-hidden border border-gray-300 dark:border-gray-700 hover:border-pink-500/50 transition-all duration-300 hover:shadow-2xl hover:shadow-pink-500/20 hover:-translate-y-2"
-                    >
-                        {/* IMAGE CONTAINER WITH ASPECT RATIO 2:3 */}
-                        <div className="relative w-full aspect-[2/3] overflow-hidden bg-gray-200 dark:bg-gray-800">
-                            <img
-                                src={comic.image}
-                                alt={comic.title}
-                                loading={index < 6 ? "eager" : "lazy"}
-                                decoding="async"
-                                className="absolute inset-0 w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-110"
-                                onError={(e) => {
-                                    e.target.src = 'https://via.placeholder.com/300x450?text=No+Cover'
-                                }}
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                            
-                            {/* Chapter Badge */}
-                            <div className="absolute top-2 right-2 bg-gradient-to-r from-pink-600 to-rose-600 text-white px-2 py-1 rounded-md text-[10px] md:text-xs font-bold shadow-lg z-10">
-                                {comic.chapter}
-                            </div>
-                        </div>
-
-                        <div className="p-3 md:p-4">
-                            <h3 className="font-bold text-xs md:text-sm lg:text-base line-clamp-2 mb-3 text-gray-900 dark:text-gray-100 group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors h-[2.5rem] md:h-[3rem] overflow-hidden">
-                                {comic.title}
-                            </h3>
-                            <button
-                                onClick={() => handleComicDetail(comic)}
-                                className="w-full bg-gradient-to-r from-pink-600 to-rose-600 text-white py-2 rounded-lg hover:from-pink-500 hover:to-rose-500 transition-all duration-300 text-xs md:text-sm font-bold shadow-lg flex items-center justify-center gap-2"
-                            >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                                </svg>
-                                Baca
-                            </button>
-                        </div>
-                    </div>
-                ))}
-            </div>
+const Home = () => {
+  return (
+    <>
+      <SEO
+        title="ShinVerse - Baca Komik Gratis Bahasa Indonesia Terbaru"
+        description="Baca komik online gratis di ShinVerse. Koleksi lengkap manga, manhwa, dan manhua terbaru dalam bahasa Indonesia. Update setiap hari!"
+        keywords="komik indonesia, baca komik gratis, manga indo, manhwa indonesia, shinverse"
+        url="https://shinverse.app/"
+      />
+      
+      <div className="relative bg-gray-50 dark:bg-[#0a0a0a] min-h-screen text-gray-900 dark:text-gray-100 transition-colors duration-500">
+        
+        {/* Background Decorative Elements (ShinVerse Blue-Cyan Theme) */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[120px]"></div>
+          <div className="absolute bottom-[20%] right-[-5%] w-[400px] h-[400px] bg-cyan-500/10 rounded-full blur-[100px]"></div>
+          <div className="absolute top-[40%] left-[20%] w-[300px] h-[300px] bg-blue-400/5 rounded-full blur-[80px]"></div>
         </div>
-    )
+
+        {/* Main Content Area */}
+        <div className="relative z-10">
+          
+          {/* 1. Hero & Search Section */}
+          <section className="pt-6 md:pt-10">
+            <SearchComic />
+          </section>
+
+          {/* 2. Trending Section (Biasanya ditaruh atas untuk menarik perhatian) */}
+          <section className="py-4">
+            <CardTrendingComic />
+          </section>
+
+          {/* 3. Terbaru Section */}
+          <section className="py-4">
+            <CardTerbaruComic />
+          </section>
+
+          {/* 4. Unlimited Collection (Pink-Rose Accent as a Special Collection) */}
+          <section className="py-4">
+            <CardUnlimitedComic />
+          </section>
+
+          {/* 5. Explorer / Quick Links Section */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+            <div className="relative group">
+              {/* Card Container */}
+              <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-3xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
+              
+              <div className="relative bg-white dark:bg-gray-800/80 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-3xl p-8 md:p-12 overflow-hidden text-center">
+                <div className="max-w-2xl mx-auto">
+                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 shadow-xl mb-6 group-hover:scale-110 transition-transform duration-500">
+                    <FontAwesomeIcon icon={faCompass} className="text-4xl text-white" />
+                  </div>
+                  
+                  <h2 className="text-3xl md:text-4xl font-black mb-4 tracking-tight">
+                    Masih Kurang? <br />
+                    <span className="bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
+                      Jelajahi Seluruh Pustaka
+                    </span>
+                  </h2>
+                  
+                  <p className="text-gray-600 dark:text-gray-400 text-lg mb-8">
+                    Temukan ribuan judul komik dari berbagai genre. Petualangan tanpa batas menantimu di pustaka lengkap kami.
+                  </p>
+                  
+                  <Link
+                    to="/pustaka"
+                    className="inline-flex items-center gap-3 px-10 py-4 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-2xl font-bold text-lg shadow-xl shadow-blue-600/20 hover:shadow-blue-600/40 hover:-translate-y-1 transition-all active:scale-95"
+                  >
+                    <FontAwesomeIcon icon={faBookOpen} />
+                    Buka Pustaka
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer Section */}
+          <footer className="mt-10 pb-12 border-t border-gray-200 dark:border-gray-800 bg-white/50 dark:bg-transparent">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                <div className="text-center md:text-left">
+                  <h2 className="text-2xl font-black bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent mb-2">
+                    ShinVerse
+                  </h2>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm">
+                    Platform baca komik online terlengkap dengan pengalaman membaca yang bersih dan modern.
+                  </p>
+                </div>
+                
+                <div className="text-center md:text-right">
+                  <div className="flex justify-center md:justify-end gap-6 mb-4 text-sm font-bold text-gray-600 dark:text-gray-400">
+                    <Link to="/" className="hover:text-blue-500">Home</Link>
+                    <Link to="/pustaka" className="hover:text-blue-500">Pustaka</Link>
+                    <Link to="/history" className="hover:text-blue-500">Riwayat</Link>
+                  </div>
+                  <p className="text-gray-400 dark:text-gray-600 text-xs">
+                    &copy; 2026 ShinVerse. Dibuat dengan dedikasi untuk pembaca.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </footer>
+        </div>
+      </div>
+    </>
+  )
 }
 
-export default CardUnlimitedComic
+export default Home
