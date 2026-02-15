@@ -1,120 +1,209 @@
-<!doctype html>
-<html lang="id">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+import React, { useState, useEffect, useRef } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import axios from 'axios';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faArrowLeft, faChevronLeft, faChevronRight, faHome, faBookOpen, faExpand, faRotate } from '@fortawesome/free-solid-svg-icons';
 
-    <meta http-equiv="x-dns-prefetch-control" content="on" />
+const ReadComic = () => {
+    const navigate = useNavigate();
+    const { slug, chapterSlug } = useParams();
+    const location = useLocation();
+    
+    const { chapterLink, comicTitle, chapterNumber, comicDetailState } = location.state || {};
+    
+    const [pages, setPages] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [scrollProgress, setScrollProgress] = useState(0);
+    const [navigation, setNavigation] = useState({ previousChapter: null, nextChapter: null });
+    const [isFullscreen, setIsFullscreen] = useState(false);
+    const comicContainerRef = useRef(null);
 
-    <title>ShinVerse - Baca Komik Gratis Bahasa Indonesia Terbaru</title>
-    <meta name="title" content="ShinVerse - Baca Komik Gratis Bahasa Indonesia Terbaru" />
-    <meta name="description" content="Baca komik online gratis di ShinVerse. Koleksi lengkap komik terbaru, trending, dan populer dalam bahasa Indonesia. Update setiap hari!" />
-    <meta name="keywords" content="komik indonesia, baca komik gratis, komik online, manga indonesia, manhwa indonesia, komik terbaru, komik trending" />
-    <meta name="author" content="ShinVerse" />
-    <meta name="robots" content="index, follow" />
-    <meta name="googlebot" content="index, follow" />
-    <meta name="language" content="Indonesian" />
-    <meta name="revisit-after" content="1 days" />
+    const saveHistory = (comicData) => {
+        try {
+            const history = JSON.parse(localStorage.getItem('comicHistory')) || {};
+            history[slug] = {
+                title: comicData.comicTitle,
+                image: comicDetailState?.comic?.image,
+                lastChapter: comicData.chapterNumber,
+                lastChapterLink: comicData.chapterLink,
+                lastChapterSlug: chapterSlug,
+                readDate: new Date().toISOString(),
+                comicDataForDetail: comicDetailState,
+            };
+            localStorage.setItem('comicHistory', JSON.stringify(history));
+        } catch (e) { console.error("History Error:", e); }
+    };
 
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://shinverse.app/" />
-    <meta property="og:title" content="ShinVerse - Baca Komik Gratis Bahasa Indonesia Terbaru" />
-    <meta property="og:description" content="Baca komik online gratis di ShinVerse. Koleksi lengkap komik terbaru, trending, dan populer dalam bahasa Indonesia. Update setiap hari!" />
-    <meta property="og:image" content="https://shinverse.app/og-image.jpg" />
-    <meta property="og:site_name" content="ShinVerse" />
-    <meta property="og:locale" content="id_ID" />
+    useEffect(() => {
+        const fetchChapterPages = async () => {
+            if (!chapterLink) {
+                setError(new Error('Link chapter tidak ditemukan'));
+                setLoading(false);
+                return;
+            }
+            setLoading(true);
+            setPages([]);
+            window.scrollTo(0, 0); 
 
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="https://shinverse.app/" />
-    <meta property="twitter:title" content="ShinVerse - Baca Komik Gratis Bahasa Indonesia Terbaru" />
-    <meta property="twitter:description" content="Baca komik online gratis di ShinVerse. Koleksi lengkap komik terbaru, trending, dan populer dalam bahasa Indonesia. Update setiap hari!" />
-    <meta property="twitter:image" content="https://shinverse.app/og-image.jpg" />
+            try {
+                const response = await axios.get(`https://www.sankavollerei.com/comic/chapter${chapterLink}`);
+                setPages(response.data.images || []);
+                setNavigation(response.data.navigation || { previousChapter: null, nextChapter: null });
+                setLoading(false);
 
-    <link rel="canonical" href="https://shinverse.app/" />
+                saveHistory({ chapterLink, comicTitle, chapterNumber });
+            } catch (err) {
+                setError(err);
+                setLoading(false);
+            }
+        };
 
-    <link rel="preconnect" href="https://backend-comic.antidonasi.web.id" />
-    <link rel="dns-prefetch" href="https://backend-comic.antidonasi.web.id" />
-    <link rel="preconnect" href="https://www.sankavollerei.com" />
-    <link rel="dns-prefetch" href="https://www.sankavollerei.com" />
+        fetchChapterPages();
+    }, [chapterLink]);
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playpen+Sans:wght@400;600;700;800&display=swap" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playpen+Sans:wght@400;600;700;800&display=swap" media="print" onload="this.media='all'" />
-    <noscript>
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playpen+Sans:wght@400;600;700;800&display=swap" />
-    </noscript>
+    useEffect(() => {
+        const handleScroll = () => {
+            const winScroll = document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            setScrollProgress(scrolled);
+        };
 
-    <style>
-      /* Reset & Base */
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      html { scroll-behavior: smooth; }
-      
-      /* Theme Awareness */
-      body {
-        font-family: 'Playpen Sans', -apple-system, sans-serif;
-        -webkit-font-smoothing: antialiased;
-        background-color: #ffffff;
-        color: #111827;
-        text-rendering: optimizeSpeed;
-      }
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
-      [data-theme="dark"] body {
-        background-color: #0a0a0a;
-        color: #f3f4f6;
-      }
+    const toggleFullscreen = () => {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+            setIsFullscreen(true);
+        } else {
+            document.exitFullscreen();
+            setIsFullscreen(false);
+        }
+    };
 
-      /* ANTI-GEPENG PROTECTION */
-      img {
-        max-width: 100%;
-        height: auto; /* Kunci utama agar rasio tetap asli */
-        display: block;
-        object-fit: cover; /* Fallback untuk kontainer berukuran tetap */
-      }
+    const navigateToChapter = (targetSlug) => {
+        if (!targetSlug) return;
+        const newChapterNumber = targetSlug.split('-').pop(); 
+        navigate(`/read-comic/${slug}/${targetSlug}`, { 
+            state: { 
+                chapterLink: targetSlug, 
+                comicTitle, 
+                chapterNumber: newChapterNumber,
+                comicDetailState
+            } 
+        });
+    };
 
-      /* Layout Shift Prevention */
-      #root { min-height: 100vh; }
-      #root:empty { background-color: inherit; }
+    if (loading) return (
+        <div className="min-h-screen bg-[#0a0a0a] flex flex-col justify-center items-center">
+            <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p className="text-blue-400 font-bold animate-pulse tracking-widest uppercase text-xs">Mempersiapkan Halaman...</p>
+        </div>
+    );
 
-      /* Global Spinner */
-      .loading-spinner {
-        width: 40px;
-        height: 40px;
-        border: 3px solid rgba(59, 130, 246, 0.2);
-        border-top-color: #3b82f6;
-        border-radius: 50%;
-        animation: spin 0.8s linear infinite;
-      }
-      @keyframes spin { to { transform: rotate(360deg); } }
+    return (
+        <div className="bg-white dark:bg-[#0a0a0a] min-h-screen transition-colors">
+            {/* Top Bar Navigation */}
+            <nav className={`fixed top-0 inset-x-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl z-50 border-b border-gray-200 dark:border-gray-800 transition-transform duration-300 ${scrollProgress > 5 && scrollProgress < 95 ? '-translate-y-full' : 'translate-y-0'}`}>
+                <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+                    <button onClick={() => navigate(`/detail-comic/${slug}`, { state: comicDetailState })} className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-500">
+                        <FontAwesomeIcon icon={faArrowLeft} />
+                    </button>
 
-      @media (max-width: 768px) {
-        body { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-      }
-    </style>
+                    <div className="flex-1 px-4 text-center">
+                        <h1 className="text-sm font-black text-gray-900 dark:text-white line-clamp-1">
+                            {comicTitle} <span className="text-blue-600">#{chapterNumber}</span>
+                        </h1>
+                    </div>
 
-    <meta name="theme-color" content="#3B82F6" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+                    <div className="flex items-center gap-2">
+                        <button onClick={toggleFullscreen} className="p-2 text-gray-600 dark:text-gray-400">
+                            <FontAwesomeIcon icon={faExpand} />
+                        </button>
+                        <button onClick={() => navigate('/')} className="p-2 text-gray-600 dark:text-gray-400">
+                            <FontAwesomeIcon icon={faHome} />
+                        </button>
+                    </div>
+                </div>
+                {/* Progress Line */}
+                <div className="h-[2px] w-full bg-gray-200 dark:bg-gray-800">
+                    <div className="h-full bg-blue-600 transition-all duration-150" style={{ width: `${scrollProgress}%` }} />
+                </div>
+            </nav>
 
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "ShinVerse",
-      "url": "https://shinverse.app/",
-      "description": "Platform baca komik online gratis dalam bahasa Indonesia",
-      "inLanguage": "id-ID",
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": "https://shinverse.app/pustaka?search={search_term_string}",
-        "query-input": "required name=search_term_string"
-      }
-    }
-    </script>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
-</html>
+            {/* Comic Content Area */}
+            <main className="max-w-3xl mx-auto pt-16 pb-20">
+                {pages.length > 0 ? (
+                    pages.map((page, idx) => (
+                        <div key={idx} className="bg-gray-100 dark:bg-gray-900 min-h-[400px]">
+                            <img
+                                src={page}
+                                alt={`Page ${idx + 1}`}
+                                loading={idx < 3 ? "eager" : "lazy"}
+                                className="w-full h-auto block select-none pointer-events-none"
+                                onError={(e) => { e.target.src = 'https://via.placeholder.com/800x1200?text=Gagal+Memuat+Gambar'; }}
+                            />
+                        </div>
+                    ))
+                ) : (
+                    <div className="py-20 text-center">
+                        <p className="text-gray-500">Gambar tidak ditemukan.</p>
+                    </div>
+                )}
+
+                {/* End of Chapter Navigation */}
+                <div className="mt-10 px-4 space-y-6">
+                    <div className="p-8 rounded-3xl bg-gray-100 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 text-center">
+                        <h3 className="text-xl font-bold mb-4">Kamu telah menyelesaikan Chapter {chapterNumber}</h3>
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                            {navigation.nextChapter && (
+                                <button 
+                                    onClick={() => navigateToChapter(navigation.nextChapter)}
+                                    className="px-10 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold shadow-xl shadow-blue-600/20 transition-all scale-105"
+                                >
+                                    Lanjut Chapter Berikutnya
+                                </button>
+                            )}
+                            <button 
+                                onClick={() => navigate(`/detail-comic/${slug}`, { state: comicDetailState })}
+                                className="px-10 py-4 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-2xl font-bold border border-gray-200 dark:border-gray-600"
+                            >
+                                Kembali ke Detail
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            {/* Bottom Floating Nav */}
+            <div className={`fixed bottom-6 inset-x-0 z-50 flex justify-center px-4 transition-transform duration-300 ${scrollProgress > 10 && scrollProgress < 90 ? 'translate-y-24' : 'translate-y-0'}`}>
+                <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-2xl border border-gray-200 dark:border-gray-700 rounded-2xl p-2 shadow-2xl flex items-center gap-2">
+                    <button 
+                        disabled={!navigation.previousChapter}
+                        onClick={() => navigateToChapter(navigation.previousChapter)}
+                        className="w-12 h-12 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 disabled:opacity-30"
+                    >
+                        <FontAwesomeIcon icon={faChevronLeft} />
+                    </button>
+                    
+                    <div className="px-4 font-bold text-sm">
+                        Ch. {chapterNumber}
+                    </div>
+
+                    <button 
+                        disabled={!navigation.nextChapter}
+                        onClick={() => navigateToChapter(navigation.nextChapter)}
+                        className="w-12 h-12 flex items-center justify-center rounded-xl bg-blue-600 text-white disabled:opacity-30"
+                    >
+                        <FontAwesomeIcon icon={faChevronRight} />
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default ReadComic;
