@@ -9,32 +9,38 @@ const ThemeToggle = () => {
     return (
         <button
             onClick={toggleTheme}
-            className="relative p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="group relative p-2.5 rounded-xl transition-all duration-300 
+                       bg-gray-100 dark:bg-gray-800 
+                       hover:ring-2 hover:ring-blue-500/50 dark:hover:ring-cyan-500/50
+                       active:scale-90 shadow-sm"
             aria-label="Toggle theme"
         >
-            <div className="relative w-6 h-6">
-                {/* Sun Icon */}
+            <div className="relative w-5 h-5 flex items-center justify-center">
+                {/* Sun Icon (Light Mode) */}
                 <FontAwesomeIcon
                     icon={faSun}
-                    className={`absolute inset-0 transition-all duration-300 ${
+                    className={`absolute transition-all duration-500 transform ${
                         theme === 'light'
-                            ? 'opacity-100 rotate-0 scale-100'
-                            : 'opacity-0 rotate-90 scale-0'
+                            ? 'opacity-100 rotate-0 scale-100 text-yellow-500'
+                            : 'opacity-0 rotate-180 scale-0 text-gray-400'
                     }`}
                 />
-                {/* Moon Icon */}
+                
+                {/* Moon Icon (Dark Mode) */}
                 <FontAwesomeIcon
                     icon={faMoon}
-                    className={`absolute inset-0 transition-all duration-300 ${
+                    className={`absolute transition-all duration-500 transform ${
                         theme === 'dark'
-                            ? 'opacity-100 rotate-0 scale-100'
-                            : 'opacity-0 -rotate-90 scale-0'
+                            ? 'opacity-100 rotate-0 scale-100 text-cyan-400'
+                            : 'opacity-0 -rotate-180 scale-0 text-gray-500'
                     }`}
                 />
             </div>
+
+            {/* Subtle Glow Effect on Hover */}
+            <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity bg-gradient-to-r from-blue-500 to-cyan-500"></div>
         </button>
     )
 }
 
 export default ThemeToggle
-                  
