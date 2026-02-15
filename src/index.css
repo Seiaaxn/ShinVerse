@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* Light theme colors */
+    /* Light theme colors - RGB format for easy opacity handling */
     --bg-primary: 255, 255, 255;
     --bg-secondary: 249, 250, 251;
     --bg-tertiary: 243, 244, 246;
@@ -12,10 +12,12 @@
     --text-secondary: 75, 85, 99;
     --text-tertiary: 156, 163, 175;
     --border-color: 229, 231, 235;
+    --accent-blue: 37, 99, 235;
+    --accent-cyan: 6, 182, 212;
   }
 
   [data-theme="dark"] {
-    /* Dark theme colors */
+    /* Dark theme colors - Deep Black-Gray for AMOLED look */
     --bg-primary: 10, 10, 10;
     --bg-secondary: 18, 18, 18;
     --bg-tertiary: 30, 30, 30;
@@ -23,38 +25,45 @@
     --text-secondary: 209, 213, 219;
     --text-tertiary: 156, 163, 175;
     --border-color: 55, 65, 81;
+    --accent-blue: 59, 130, 246;
+    --accent-cyan: 34, 211, 238;
   }
 
   html {
     scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
-    @apply antialiased;
+    @apply antialiased selection:bg-blue-500/30;
     background-color: rgb(var(--bg-primary));
     color: rgb(var(--text-primary));
+    font-family: 'Playpen Sans', sans-serif;
   }
 
-  /* Optimize font loading with font-display swap */
+  /* Optimize font loading */
   @font-face {
     font-family: 'Playpen Sans';
     font-display: swap;
   }
 
-  /* Prevent CLS - Ensure images maintain aspect ratio */
+  /* Prevent CLS - Global image optimization */
   img {
     content-visibility: auto;
+    @apply h-auto max-w-full;
   }
 
-  /* CSS Containment for better performance */
+  /* CSS Containment for cards */
   .card-container {
     contain: layout style paint;
   }
 
-  /* Aspect ratio containers to prevent layout shift */
+  /* Aspect ratio fix for Comic Covers */
   .aspect-comic-cover {
     aspect-ratio: 2 / 3;
     position: relative;
+    overflow: hidden;
+    background-color: rgb(var(--bg-tertiary));
   }
 
   .aspect-comic-cover img {
@@ -68,6 +77,16 @@
 }
 
 @layer utilities {
+  /* ShinVerse Signature Gradient */
+  .bg-shinverse {
+    @apply bg-gradient-to-br from-blue-600 to-cyan-500;
+  }
+
+  .text-shinverse {
+    @apply bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent;
+  }
+
+  /* Advanced Line Clamping */
   .line-clamp-1 {
     display: -webkit-box;
     -webkit-line-clamp: 1;
@@ -82,63 +101,55 @@
     overflow: hidden;
   }
 
-  .line-clamp-3 {
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  /* Performance optimizations - GPU acceleration */
+  /* GPU Acceleration for smooth animations */
   .gpu-accelerate {
     transform: translateZ(0);
     backface-visibility: hidden;
     perspective: 1000px;
   }
 
-  /* Will-change for hover animations */
-  .will-change-transform {
-    will-change: transform;
-  }
-
-  .will-change-opacity {
-    will-change: opacity;
-  }
-
-  /* Content visibility for better rendering performance */
+  /* Content Visibility for long scrollable lists (Performance!) */
   .content-auto {
     content-visibility: auto;
-    contain-intrinsic-size: auto 500px;
+    contain-intrinsic-size: 1px 500px;
   }
 
-  /* Optimize animations with composite layers */
-  .smooth-transform {
-    transform: translateZ(0);
-    will-change: transform;
-  }
-
-  /* Remove will-change after animation */
-  .smooth-transform:not(:hover):not(:focus) {
-    will-change: auto;
-  }
-
-  /* Optimize scrolling performance */
+  /* Optimize scrolling on mobile */
   .scroll-optimize {
     -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
+    overscroll-behavior-y: contain;
   }
 
-  /* Skeleton loader shimmer animation */
+  /* Fix for the shimmer animation */
   @keyframes shimmer {
-    0% {
-      transform: translateX(-100%);
-    }
-    100% {
-      transform: translateX(100%);
-    }
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
   }
 
   .animate-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .animate-shimmer::after {
+    content: "";
+    position: absolute;
+    top: 0; right: 0; bottom: 0; left: 0;
+    background: linear-gradient(
+      90deg, 
+      transparent, 
+      rgba(255, 255, 255, 0.05), 
+      transparent
+    );
     animation: shimmer 2s infinite;
   }
-}
+
+  /* Custom Slow Bounce for Hero Icons */
+  @keyframes bounce-slow {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  .animate-bounce-slow {
+    animation: bounce-slow 3s infinite ease-in-out;
+  }
+    }
